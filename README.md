@@ -4,3 +4,4 @@
 4. Prototyp duszków
 5. Zmiana rozdzielczości na 750x750
 6. Dodanie punktów, wyniku i restartu
+7. Dodanie ramki

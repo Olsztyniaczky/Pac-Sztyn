@@ -224,6 +224,7 @@ while restart:
         for wydarzenie in pygame.event.get():
             if wydarzenie.type == pygame.QUIT:
                 TrwanieGry = False
+                restart = False
 
         #ustalamy sterowanie bohaterem
 

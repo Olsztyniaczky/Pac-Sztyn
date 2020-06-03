@@ -234,7 +234,7 @@ while restart:
     fioletowy_tablica_ruch = [-1, 1, 1, 1, 1, -1]
     font = pygame.font.SysFont('arial', 25, True)
     dots = punkty()
-    pacman = bohater(375,375,15,2)
+    pacman = bohater(375,375,11,2)
     TrwanieGry = True
     zegar = pygame.time.Clock()
     sciana = Rama(700, 700, 25, 25)

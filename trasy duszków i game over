@@ -1,4 +1,5 @@
 import pygame,math,sys
+from pygame import mixer
 pygame.init()
 #wielkość ekranu gry
 
@@ -111,22 +112,22 @@ class Rama(object):
         if (pacman.x - pacman.promien) <= self.x and (pacman.y > self.y) and (pacman.y < self.y + self.dlugosc) and pacman.kierunek == 0:
             pacman.predkosc = 0
         else:
-            pacman.predkosc = 3
+            pacman.predkosc = 2
         #prawa
             if (pacman.x + pacman.promien) >= (self.x + self.dlugosc) and (pacman.y > self.y) and (pacman.y < self.y + self.dlugosc) and pacman.kierunek == 2:
                 pacman.predkosc = 0
             else:
-                pacman.predkosc = 3
+                pacman.predkosc = 2
             #górna
                 if (pacman.y - pacman.promien) <= self.y and (pacman.x > self.x) and (pacman.x < self.x + self.szerokosc) and pacman.kierunek == 1:
                     pacman.predkosc = 0
                 else:
-                    pacman.predkosc = 3
+                    pacman.predkosc = 2
                 #dolna
                     if (pacman.y + pacman.promien) >= (self.y + self.szerokosc) and (pacman.x > self.x) and (pacman.x < self.x + self.szerokosc) and pacman.kierunek == 3:
                         pacman.predkosc = 0
                     else:
-                        pacman.predkosc = 3
+                        pacman.predkosc = 2
 
 class duch():
 #Ten "czerwonyx i czerwonyy" mogą być mylące bo najpierw robiłem po prostu czerwonego duszka i to są po prostu parametry x i y
@@ -199,7 +200,12 @@ def OdswiezenieEkranu():
     dots.zjedzenie()
     dots.RysujPunkt(win)
     wynik = font.render('HIGH SCORE:' +  str(dots.wynik), 2, (255,255,255))
+    if muzyka == 0:
+        music = font.render("(M)USIC OFF", 2, (255,255,255))
+    if muzyka == 1:
+        music = font.render("(M)USIC ON", 2, (255,255,255))
     win.blit(wynik, (290,2))
+    win.blit(music, (600,722))
     pygame.display.update()
 
 
@@ -232,6 +238,10 @@ while restart:
     TrwanieGry = True
     zegar = pygame.time.Clock()
     sciana = Rama(700, 700, 25, 25)
+    muzyka = 1
+    mixer.init()
+    pygame.mixer.music.load("PACMAN_REMIX.wav")
+    pygame.mixer.music.play(-1)
 
     while TrwanieGry == True:
 
@@ -261,6 +271,14 @@ while restart:
                     wcisniecie = False
                 if wydarzenie.key == pygame.K_DOWN and pacman.kierunek != 3 and pacman.kierunek != 1 and wcisniecie:
                     pacman.kierunek = 3
+                    wcisniecie = False
+                if wydarzenie.key == pygame.K_m and muzyka == 1 and wcisniecie:
+                    pygame.mixer.music.stop()
+                    muzyka = 0
+                    wcisniecie = False
+                if wydarzenie.key == pygame.K_m and muzyka == 0 and wcisniecie:
+                    pygame.mixer.music.play(-1)
+                    muzyka = 1
                     wcisniecie = False
 
 

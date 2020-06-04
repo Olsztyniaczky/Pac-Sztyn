@@ -1,0 +1,310 @@
+import pygame,math,sys
+from pygame import mixer
+pygame.init()
+#wielkość ekranu gry
+
+win = pygame.display.set_mode((750,750))
+width=750
+height= 750
+
+#nazwa gry
+
+pygame.display.set_caption("Pac Man")
+
+
+
+#tło/plansza gry
+
+picture = pygame.image.load('walls_pacman.png')
+picture = pygame.transform.scale(picture, (750, 750))
+class Background(pygame.sprite.Sprite):
+    def __init__(self, image_file, location):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load(image_file)
+        self.image = pygame.transform.scale(self.image,(750, 750))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = location
+BackGround = Background('walls_pacman.png', [0,0])
+
+
+#tworzymy punkty
+
+class punkty(object):
+    def __init__(self):
+        self.pointsx = []
+        self.pointsy = []
+        self.restart = True
+        self.wynik = 0
+        kulki = open("dots.txt",'r')
+        for ykulka , wiersz in enumerate(kulki):
+            for xkulka ,kolumna in enumerate(wiersz):
+                if kolumna == "1":
+                    self.pointsy.append(ykulka*25+12)
+                    self.pointsx.append(xkulka*25+12)
+
+    def RysujPunkt(self,win):
+        for punkt in range(len(self.pointsx)):
+            pygame.draw.circle(win, (0, 200, 200), (self.pointsx[punkt],self.pointsy[punkt]),5)
+
+    def zjedzenie(self):
+        if len(self.pointsx)>0:
+            for punkt, chart in enumerate(self.pointsx):
+                if pacman.x <= (self.pointsx[punkt] + pacman.promien) and pacman.x >= (self.pointsx[punkt] - pacman.promien) and pacman.y <= (self.pointsy[punkt] + pacman.promien) and pacman.y >= (self.pointsy[punkt] - pacman.promien):
+                    self.pointsy.pop(punkt)
+                    self.pointsx.pop(punkt)
+                    self.wynik += 1
+
+        else:
+            print("zjadłeś wszystko, wcisnij spacje")
+            while self.restart == True:
+                font = pygame.font.SysFont('comicsans', 80, True)
+                endgame = font.render("Wciśnij spacje", 1, (255,0,0))
+                endgame2 = font.render("by zagrać od nowa", 1, (255,0,0))
+                win.blit(endgame, (150,300))
+                win.blit(endgame2, (90,400))
+                pygame.display.update()
+                for event in pygame.event.get():
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_SPACE:
+                            self.restart= False
+
+
+
+#tworzymy klase bohatera
+
+class bohater(object):
+    def __init__(self, x, y, promien, predkosc):
+        self.x = x
+        self.y = y
+        self.predkosc = predkosc
+        self.promien = promien
+        self.wcisniecie = True
+        self.kierunek = ""
+
+    def RysujBohatera(self,win):
+        pygame.draw.circle(win, (255, 255, 0), (self.x,self.y),self.promien)
+
+    def ruchBohatera(self):
+        if self.kierunek == 0:
+            self.x -= self.predkosc
+        if self.kierunek == 1:
+            self.y -= self.predkosc
+        if self.kierunek == 2:
+            self.x += self.predkosc
+        if self.kierunek ==3:
+            self.y += self.predkosc
+
+#blokada_okna
+
+class Rama(object):
+    def __init__(self,dlugosc,szerokosc,x,y):
+        self.dlugosc = dlugosc
+        self.szerokosc = szerokosc
+        self.x = x
+        self.y = y
+
+    def budowa(self,win):
+
+        pygame.draw.rect(win,(0,0,205), (self.x,self.y,self.dlugosc,self.szerokosc),1)
+
+    def kolizja(self):
+    #lewa
+        if (pacman.x - pacman.promien) <= self.x and (pacman.y > self.y) and (pacman.y < self.y + self.dlugosc) and pacman.kierunek == 0:
+            pacman.predkosc = 0
+        else:
+            pacman.predkosc = 2
+        #prawa
+            if (pacman.x + pacman.promien) >= (self.x + self.dlugosc) and (pacman.y > self.y) and (pacman.y < self.y + self.dlugosc) and pacman.kierunek == 2:
+                pacman.predkosc = 0
+            else:
+                pacman.predkosc = 2
+            #górna
+                if (pacman.y - pacman.promien) <= self.y and (pacman.x > self.x) and (pacman.x < self.x + self.szerokosc) and pacman.kierunek == 1:
+                    pacman.predkosc = 0
+                else:
+                    pacman.predkosc = 2
+                #dolna
+                    if (pacman.y + pacman.promien) >= (self.y + self.szerokosc) and (pacman.x > self.x) and (pacman.x < self.x + self.szerokosc) and pacman.kierunek == 3:
+                        pacman.predkosc = 0
+                    else:
+                        pacman.predkosc = 2
+
+class duch():
+#Ten "czerwonyx i czerwonyy" mogą być mylące bo najpierw robiłem po prostu czerwonego duszka i to są po prostu parametry x i y
+#określające jego wymiary, ale na tych nazwach są zbudowane wszystkie 4 duszki
+
+    def __init__(self,czerwonyx,czerwonyy):
+        self.duszek_ruch1 = (10)
+        self.restart = True
+        # self.parametr1 = parametr1
+        # self.parametr2 = parametr2
+        self.czerwonyx = czerwonyx
+        self.czerwonyy = czerwonyy
+        self.duszek_ruch2 = (self.czerwonyx, self.czerwonyy)
+        self.indx = 0
+
+
+    def poruszanie_sie(self, tablica, tablica_ruch):
+#Instrukcje poruszania się dla duszków. Duszek najpierw porusza się 50 jednostek w dół, potem 50 w prawo itd. aż zrobi pełny kwadrat
+#wtedy licznik się zeruje i duszek leci od nowa. Te 50 to oczywiście tylko przykładowo. Można to zmieniać na dowolne numery i w ten sposób
+#decydować jak duszek będzie się ruszał
+
+        if self.indx == tablica[0]:
+            self.indx = 0
+        if self.indx in range(tablica[1]):
+            self.czerwonyx += tablica_ruch[0]
+        elif self.indx in range(tablica[1], tablica[2]):
+            self.czerwonyy += tablica_ruch[1]
+        elif self.indx in range(tablica[2], tablica[3]):
+            self.czerwonyx += tablica_ruch[2]
+        elif self.indx in range(tablica[3], tablica[4]):
+            self.czerwonyy += tablica_ruch[3]
+        elif self.indx in range(tablica[4], tablica[5]):
+            self.czerwonyx += tablica_ruch[4]
+        elif self.indx in range(tablica[5], tablica[6]):
+            self.czerwonyy += tablica_ruch[5]
+        self.indx += 1
+        self.duszek_ruch2 = (self.czerwonyx, self.czerwonyy)
+
+    def rysowanie(self,win, kolor):
+
+        win.blit(kolor, self.duszek_ruch2)
+
+
+    def game_over(self, pacman):
+        if abs(self.czerwonyx - pacman.x) < 20 and abs(self.czerwonyy - pacman.y) < 15:
+            while self.restart == True:
+                font = pygame.font.SysFont('comicsans', 80, True)
+                endgame = font.render("Wciśnij spacje", 1, (255, 0, 0))
+                endgame2 = font.render("by zagrać od nowa", 1, (255, 0, 0))
+                win.blit(endgame, (150, 300))
+                win.blit(endgame2, (90, 400))
+                pygame.display.update()
+                for event in pygame.event.get():
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_SPACE:
+                            self.restart = False
+
+
+#tworzymy funkcje budującą od nowa klatkę obrazu
+
+def OdswiezenieEkranu():
+    #to jest tu po to żeby tło działało
+    win.fill([255, 255, 255])
+    win.blit(BackGround.image, BackGround.rect)
+    sciana.budowa(win)
+    sciana.kolizja()
+    czerwony.game_over(pacman)
+    niebieski.game_over(pacman)
+    zielony.game_over(pacman)
+    fioletowy.game_over(pacman)
+    pacman.ruchBohatera()
+    pacman.RysujBohatera(win)
+    czerwony.poruszanie_sie(czerwony_tablica_range, czerwony_tablica_ruch)
+    czerwony.rysowanie(win, czerwony_sprite)
+    niebieski.poruszanie_sie(niebieski_tablica_range, niebieski_tablica_ruch)
+    niebieski.rysowanie(win, niebieski_sprite)
+    zielony.poruszanie_sie(zielony_tablica_range, zielony_tablica_ruch)
+    zielony.rysowanie(win, zielony_sprite)
+    fioletowy.poruszanie_sie(fioletowy_tablica_range, fioletowy_tablica_ruch)
+    fioletowy.rysowanie(win, fioletowy_sprite)
+    dots.zjedzenie()
+    dots.RysujPunkt(win)
+    wynik = font.render('HIGH SCORE:' +  str(dots.wynik), 2, (255,255,255))
+    if muzyka == 0:
+        music = font.render("(M)USIC OFF", 2, (255,255,255))
+    if muzyka == 1:
+        music = font.render("(M)USIC ON", 2, (255,255,255))
+    win.blit(wynik, (290,2))
+    win.blit(music, (600,722))
+    pygame.display.update()
+
+
+
+#Główny loop
+restart = True
+
+while restart:
+
+    #ustalamy parametry gry i obiektów
+    czerwony = duch(30, 700)
+    czerwony_tablica_range = [340, 110, 170, 280, 340]
+    czerwony_tablica_ruch = [2, -2, -2, 2]
+    czerwony_sprite = pygame.image.load('czerwony.png')
+    czerwony_sprite = pygame.transform.scale(czerwony_sprite, (15, 15))
+    
+    niebieski_sprite = pygame.image.load('niebieski.png')
+    niebieski_sprite = pygame.transform.scale(niebieski_sprite, (15, 15))
+    niebieski_tablica_range = [940, 225, 390, 460, 540, 695, 940]
+    niebieski_tablica_ruch = [1, 1, -1, 1, -1, -1]
+    niebieski = duch(25, 30)
+    
+    zielony_tablica_range = [340, 110, 170, 280, 340]
+    zielony_tablica_ruch = [-2, -2, 2, 2]
+    zielony = duch(700, 700)
+    zielony_sprite = pygame.image.load('zielony.png')
+    zielony_sprite = pygame.transform.scale(zielony_sprite, (15, 15))
+    
+    fioletowy = duch(700, 30)
+    fioletowy_tablica_range = [940, 225, 390, 460, 540, 695, 940]
+    fioletowy_tablica_ruch = [-1, 1, 1, 1, 1, -1]
+    fioletowy_sprite = pygame.image.load('fioletowy.png')
+    fioletowy_sprite = pygame.transform.scale(fioletowy_sprite, (15, 15))
+    font = pygame.font.SysFont('arial', 25, True)
+    dots = punkty()
+    pacman = bohater(375,375,11,2)
+    TrwanieGry = True
+    zegar = pygame.time.Clock()
+    sciana = Rama(700, 700, 25, 25)
+    muzyka = 1
+    mixer.init()
+    pygame.mixer.music.load("PACMAN_REMIX.wav")
+    pygame.mixer.music.play(-1)
+
+    while TrwanieGry == True:
+
+        #ustalamy ilość klatek
+
+        zegar.tick(60)
+
+        #pętla sprawdzająca czy wyłączyliśmy grę
+
+        for wydarzenie in pygame.event.get():
+            if wydarzenie.type == pygame.QUIT:
+                TrwanieGry = False
+                restart = False
+
+        #ustalamy sterowanie bohaterem
+
+            if wydarzenie.type == pygame.KEYDOWN:
+
+                if wydarzenie.key == pygame.K_LEFT and pacman.kierunek != 0 and pacman.kierunek != 2 and wcisniecie:
+                    pacman.kierunek = 0
+                    wcisniecie = False
+                if wydarzenie.key == pygame.K_RIGHT and pacman.kierunek != 2 and pacman.kierunek != 0 and wcisniecie:
+                    pacman.kierunek = 2
+                    wcisniecie = False
+                if wydarzenie.key == pygame.K_UP and pacman.kierunek != 1 and pacman.kierunek != 3 and wcisniecie:
+                    pacman.kierunek = 1
+                    wcisniecie = False
+                if wydarzenie.key == pygame.K_DOWN and pacman.kierunek != 3 and pacman.kierunek != 1 and wcisniecie:
+                    pacman.kierunek = 3
+                    wcisniecie = False
+                if wydarzenie.key == pygame.K_m and muzyka == 1 and wcisniecie:
+                    pygame.mixer.music.stop()
+                    muzyka = 0
+                    wcisniecie = False
+                if wydarzenie.key == pygame.K_m and muzyka == 0 and wcisniecie:
+                    pygame.mixer.music.play(-1)
+                    muzyka = 1
+                    wcisniecie = False
+
+
+
+        OdswiezenieEkranu()
+        wcisniecie = True
+
+        if dots.restart == False:
+            break
+        elif czerwony.restart == False or niebieski.restart == False or zielony.restart == False or fioletowy.restart == False:
+            break

@@ -206,11 +206,19 @@ while restart:
     #ustalamy parametry gry i obiektów
     czerwony_kolor = (200,0,0)
     niebieski_kolor = (0,0,200)
+    niebieski_tablica_range = [940,225,390,460,540,695,940]
+    niebieski_tablica_ruch = [1,1,-1,1,-1,-1]
     zielony_kolor = (0,200,0)
     fioletowy_kolor = (100,0,100)
+    fioletowy_tablica_range = [940,225,390,460,540,695,940]
+    fioletowy_tablica_ruch = [-1, 1, 1, 1, 1, -1]
     niebieski = duch(200,200,200,200)
     czerwony = duch(200,600,200,600)
+    czerwony_tablica_range = [340,110,170,280,340]
+    czerwony_tablica_ruch = [2,-2,-2,2]
     zielony = duch(600,600,600,600)
+    zielony_tablica_range=[340,110,170,280,340]
+    zielony_tablica_ruch =[-2,-2,2,2]
     fioletowy = duch(600,200,600,200)
     font = pygame.font.SysFont('arial', 25, True)
     dots = punkty()
